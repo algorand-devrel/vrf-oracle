@@ -1,0 +1,1 @@
+{"name": "VrfIntake", "methods": [{"name": "ingest", "args": [{"type": "uint64", "name": "round"}, {"type": "byte[80]", "name": "proof"}], "returns": {"type": "void"}}, {"name": "noop", "args": [], "returns": {"type": "void"}}], "desc": null, "networks": {}}
