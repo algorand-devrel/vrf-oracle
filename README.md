@@ -23,4 +23,8 @@ run
 go run main.go
 ```
 
-and it should start w
+and it should start writing vrf values to global state
+
+
+NOTE
+The global state scheme used for storage is poor at best and i might have broken it with the last push, will come back to it later.
