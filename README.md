@@ -1,6 +1,10 @@
 VRF Demo
 --------
 
+WORK IN PROGRESS
+
+
+
 Create the app in `contract/` with 
 ```sh
 cd contract
