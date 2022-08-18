@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/barnjamin/vrf-oracle/sandbox"
 	"github.com/barnjamin/vrf-oracle/vrfproducers/algorand"
 
 	"github.com/algorand/go-algorand-sdk/abi"
@@ -47,7 +48,7 @@ func main() {
 	}
 
 	// Get signing accounts
-	accts, err = GetAccounts()
+	accts, err = sandbox.GetAccounts()
 	if err != nil {
 		log.Fatalf("Failed to get accounts: %+v", err)
 	}
@@ -69,7 +70,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create fetcher: %+v", err)
 	}
-	f.SetNextRound(1500)
+
+	sp, err := algodClient.SuggestedParams().Do(context.Background())
+	if err != nil {
+		log.Fatalf("Couldnt get suggested params: %+v", err)
+	}
+
+	f.SetNextRound(uint64(sp.FirstRoundValid) - 10)
 	f.SetBlockHandler(handler)
 
 	log.Fatalf("%v", f.Run(context.Background()))
@@ -80,6 +87,8 @@ func handler(ctx context.Context, cert *rpcs.EncodedBlockCert) error {
 	var block_seed = cert.Block.Seed()
 	var round = cert.Block.Round()
 
+	log.Printf("Working on round: %d", round)
+
 	// Build input to vrf
 	buff := make([]byte, 32+8)
 	binary.BigEndian.PutUint64(buff, uint64(round))
@@ -88,14 +97,22 @@ func handler(ctx context.Context, cert *rpcs.EncodedBlockCert) error {
 
 	_, proof := vrfp.Prove(vrfInput[:])
 
+	log.Printf("Message: %x", vrfInput)
+	log.Printf("Proof: %x", proof)
+	log.Printf("PubKey: %x", accts[0].PublicKey)
+	if true {
+		return nil
+	}
+
 	// TODO: Can i get this from the block?
 	sp, err := algodClient.SuggestedParams().Do(context.Background())
 	if err != nil {
 		return err
 	}
 
+	// Set available width low so we have access to the right round
 	sp.LastRoundValid = sp.FirstRoundValid + 10
-	if round < 100 {
+	if round == 0 {
 		return nil
 	}
 
@@ -145,7 +162,7 @@ func handler(ctx context.Context, cert *rpcs.EncodedBlockCert) error {
 		}
 	}
 
-	log.Printf("Executing and waiting...")
+	log.Printf("Submitted app call, waiting...")
 
 	// execute
 	ret, err := atc.Execute(algodClient, context.Background(), 2)
